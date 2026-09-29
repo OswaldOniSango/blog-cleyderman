@@ -1,5 +1,6 @@
 const encoder=new TextEncoder();
 const json=(data,status=200,origin='')=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS','Vary':'Origin','Cache-Control':'no-store'}});
+const preflight=(origin)=>new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS','Access-Control-Max-Age':'86400','Vary':'Origin'}});
 const b64url=(bytes)=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
 const decode64=(value)=>{const binary=atob(value.replace(/\n/g,''));const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));return new TextDecoder().decode(bytes)};
 const encode64=(value)=>{const bytes=encoder.encode(value);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary)};
@@ -10,7 +11,7 @@ async function validToken(token,secret){if(!token)return false;const[payload,sig
 function allowedPath(path){return path==='src/content/pages/sobre-mi.md'||/^src\/content\/stories\/[a-z0-9-]+\.md$/.test(path)}
 async function github(env,path,options={}){const response=await fetch(`https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}${path}`,{...options,headers:{Accept:'application/vnd.github+json',Authorization:`Bearer ${env.GITHUB_TOKEN}`,'User-Agent':'clayderman-editor','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json',...options.headers}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||`GitHub respondió ${response.status}`);return data}
 
-export default{async fetch(request,env){const origin=request.headers.get('Origin')||'';if(origin!==env.ALLOWED_ORIGIN&&origin!=='http://localhost:4321')return json({error:'Origen no permitido.'},403,env.ALLOWED_ORIGIN);if(request.method==='OPTIONS')return json({},204,origin);const url=new URL(request.url);
+export default{async fetch(request,env){const origin=request.headers.get('Origin')||'';if(origin!==env.ALLOWED_ORIGIN&&origin!=='http://localhost:4321')return json({error:'Origen no permitido.'},403,env.ALLOWED_ORIGIN);if(request.method==='OPTIONS')return preflight(origin);const url=new URL(request.url);
   if(url.pathname==='/login'&&request.method==='POST'){const body=await request.json().catch(()=>({}));if(!body.password||!safeEqual(body.password,env.ADMIN_PASSWORD))return json({error:'Contraseña incorrecta.'},401,origin);return json({token:await makeToken(env.SESSION_SECRET)},200,origin)}
   const bearer=request.headers.get('Authorization')?.replace(/^Bearer\s+/,'');if(!await validToken(bearer,env.SESSION_SECRET))return json({error:'La sesión venció. Vuelve a entrar.'},401,origin);
   try{
