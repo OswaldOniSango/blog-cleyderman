@@ -1,0 +1,21 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import StoryCard from '../../components/StoryCard.astro';
+
+const stories = (await getCollection('stories', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title="Historias" description="Todos los relatos de Clayderman Ivan.">
+  <section class="page-intro">
+    <p class="eyebrow">Archivo</p>
+    <h1>Todas las historias</h1>
+    <p>Un archivo en crecimiento, ordenado desde lo más reciente.</p>
+  </section>
+  <section class="story-grid archive-grid">
+    {stories.map((story) => (
+      <StoryCard slug={story.id} title={story.data.title} description={story.data.description} date={story.data.date} tags={story.data.tags} />
+    ))}
+  </section>
+</BaseLayout>

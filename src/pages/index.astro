@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import StoryCard from '../components/StoryCard.astro';
+
+const stories = (await getCollection('stories', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const featured = stories.find((story) => story.data.featured) ?? stories[0];
+const remaining = stories.filter((story) => story.id !== featured?.id).slice(0, 4);
+---
+
+<BaseLayout>
+  <section class="hero">
+    <p class="eyebrow">Relatos · notas · ficción</p>
+    <h1>Historias para quedarse un poco más.</h1>
+    <p class="hero-copy">Escribo sobre lo que persiste: las ciudades, la memoria y esas pequeñas decisiones que cambian una vida.</p>
+  </section>
+
+  {featured && (
+    <section class="featured-section" aria-labelledby="featured-title">
+      <p class="section-label" id="featured-title">Historia destacada</p>
+      <StoryCard
+        slug={featured.id}
+        title={featured.data.title}
+        description={featured.data.description}
+        date={featured.data.date}
+        tags={featured.data.tags}
+        featured
+      />
+    </section>
+  )}
+
+  {remaining.length > 0 && (
+    <section class="latest" aria-labelledby="latest-title">
+      <div class="section-heading">
+        <h2 id="latest-title">Últimas historias</h2>
+        <a href={`${import.meta.env.BASE_URL}historias/`}>Ver todas</a>
+      </div>
+      <div class="story-grid">
+        {remaining.map((story) => (
+          <StoryCard
+            slug={story.id}
+            title={story.data.title}
+            description={story.data.description}
+            date={story.data.date}
+            tags={story.data.tags}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>

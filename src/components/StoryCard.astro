@@ -1,0 +1,28 @@
+---
+interface Props {
+  slug: string;
+  title: string;
+  description: string;
+  date: Date;
+  tags: string[];
+  featured?: boolean;
+}
+
+const { slug, title, description, date, tags, featured = false } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const formattedDate = new Intl.DateTimeFormat('es', {
+  day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'
+}).format(date);
+---
+
+<article class:list={["story-card", { featured }]}>
+  <a href={`${base}historias/${slug}/`} aria-label={`Leer ${title}`}>
+    <div class="story-meta">
+      <time datetime={date.toISOString()}>{formattedDate}</time>
+      {tags[0] && <span>{tags[0]}</span>}
+    </div>
+    <h2>{title}</h2>
+    <p>{description}</p>
+    <span class="read-link">Leer historia</span>
+  </a>
+</article>
