@@ -42,7 +42,10 @@ const base = import.meta.env.BASE_URL;
     <main><slot /></main>
     <footer class="site-footer">
       <p>© {new Date().getFullYear()} Clayderman Ivan</p>
-      <p>Historias para leer sin prisa.</p>
+      <div class="footer-actions">
+        <p>Historias para leer sin prisa.</p>
+        <a class="admin-link" href={`${base}admin/`}>Admin</a>
+      </div>
     </footer>
   </body>
 </html>
