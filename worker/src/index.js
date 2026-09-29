@@ -1,0 +1,23 @@
+const encoder=new TextEncoder();
+const json=(data,status=200,origin='')=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS','Vary':'Origin','Cache-Control':'no-store'}});
+const b64url=(bytes)=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+const decode64=(value)=>{const binary=atob(value.replace(/\n/g,''));const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));return new TextDecoder().decode(bytes)};
+const encode64=(value)=>{const bytes=encoder.encode(value);let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary)};
+const safeEqual=(a,b)=>{const x=encoder.encode(a),y=encoder.encode(b);let diff=x.length^y.length;for(let i=0;i<Math.max(x.length,y.length);i++)diff|=(x[i%x.length]||0)^(y[i%y.length]||0);return diff===0};
+async function signature(data,secret){const key=await crypto.subtle.importKey('raw',encoder.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return b64url(await crypto.subtle.sign('HMAC',key,encoder.encode(data)))}
+async function makeToken(secret){const payload=b64url(encoder.encode(JSON.stringify({exp:Math.floor(Date.now()/1000)+8*60*60})));return`${payload}.${await signature(payload,secret)}`}
+async function validToken(token,secret){if(!token)return false;const[payload,sig]=token.split('.');if(!payload||!sig||!safeEqual(sig,await signature(payload,secret)))return false;try{const normalized=payload.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(payload.length/4)*4,'=');const data=JSON.parse(atob(normalized));return data.exp>Math.floor(Date.now()/1000)}catch{return false}}
+function allowedPath(path){return path==='src/content/pages/sobre-mi.md'||/^src\/content\/stories\/[a-z0-9-]+\.md$/.test(path)}
+async function github(env,path,options={}){const response=await fetch(`https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}${path}`,{...options,headers:{Accept:'application/vnd.github+json',Authorization:`Bearer ${env.GITHUB_TOKEN}`,'User-Agent':'clayderman-editor','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json',...options.headers}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||`GitHub respondió ${response.status}`);return data}
+
+export default{async fetch(request,env){const origin=request.headers.get('Origin')||'';if(origin!==env.ALLOWED_ORIGIN&&origin!=='http://localhost:4321')return json({error:'Origen no permitido.'},403,env.ALLOWED_ORIGIN);if(request.method==='OPTIONS')return json({},204,origin);const url=new URL(request.url);
+  if(url.pathname==='/login'&&request.method==='POST'){const body=await request.json().catch(()=>({}));if(!body.password||!safeEqual(body.password,env.ADMIN_PASSWORD))return json({error:'Contraseña incorrecta.'},401,origin);return json({token:await makeToken(env.SESSION_SECRET)},200,origin)}
+  const bearer=request.headers.get('Authorization')?.replace(/^Bearer\s+/,'');if(!await validToken(bearer,env.SESSION_SECRET))return json({error:'La sesión venció. Vuelve a entrar.'},401,origin);
+  try{
+    if(url.pathname==='/session')return json({ok:true},200,origin);
+    if(url.pathname==='/stories'&&request.method==='GET'){const files=await github(env,`/contents/src/content/stories?ref=${env.GITHUB_BRANCH}`);const stories=await Promise.all(files.filter(f=>/\.md$/.test(f.name)).map(async f=>{const file=await github(env,`/contents/${f.path}?ref=${env.GITHUB_BRANCH}`);return{name:f.name,path:f.path,sha:file.sha,content:decode64(file.content)}}));return json(stories,200,origin)}
+    if(url.pathname==='/content'&&request.method==='GET'){const path=url.searchParams.get('path');if(!allowedPath(path))return json({error:'Ruta no permitida.'},400,origin);const file=await github(env,`/contents/${path}?ref=${env.GITHUB_BRANCH}`);return json({path,sha:file.sha,content:decode64(file.content)},200,origin)}
+    if(url.pathname==='/content'&&request.method==='PUT'){const body=await request.json();if(!allowedPath(body.path)||typeof body.content!=='string'||typeof body.message!=='string')return json({error:'Contenido no válido.'},400,origin);const payload={message:body.message,content:encode64(body.content),branch:env.GITHUB_BRANCH};if(body.sha)payload.sha=body.sha;const result=await github(env,`/contents/${body.path}`,{method:'PUT',body:JSON.stringify(payload)});return json({sha:result.content.sha,commit:result.commit.html_url},200,origin)}
+    return json({error:'Ruta no encontrada.'},404,origin);
+  }catch(error){return json({error:error.message},502,origin)}
+}};

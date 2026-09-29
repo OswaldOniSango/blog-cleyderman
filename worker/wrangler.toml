@@ -1,0 +1,10 @@
+name = "clayderman-editor-api"
+account_id = "a38094e0aaa4f2aacac8d974cf869331"
+main = "src/index.js"
+compatibility_date = "2026-09-28"
+
+[vars]
+ALLOWED_ORIGIN = "https://oswaldonisango.github.io"
+GITHUB_OWNER = "OswaldOniSango"
+GITHUB_REPO = "blog-cleyderman"
+GITHUB_BRANCH = "main"

@@ -5,8 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Editor — Clayderman Ivan</title>
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <script src="https://unpkg.com/decap-cms@^3.8.0/dist/decap-cms.js"></script>
+    <main>
+      <section id="login-view" class="login-card">
+        <a class="brand" href="../"><span>Clayderman</span><span>Ivan</span></a>
+        <p class="eyebrow">Editor privado</p>
+        <h1>Escribir y publicar.</h1>
+        <p class="intro">Usa la contraseña de publicación para administrar el contenido del blog.</p>
+        <form id="login-form">
+          <label for="password">Contraseña</label>
+          <div class="login-row">
+            <input id="password" type="password" autocomplete="current-password" required />
+            <button type="submit">Entrar</button>
+          </div>
+          <p id="login-error" class="error" role="alert"></p>
+        </form>
+      </section>
+
+      <section id="editor-view" class="editor" hidden>
+        <header>
+          <div><p class="eyebrow">Editor</p><h1>Clayderman Ivan</h1></div>
+          <div class="header-actions"><span id="status" aria-live="polite"></span><button id="logout" class="secondary" type="button">Salir</button></div>
+        </header>
+        <div class="workspace">
+          <aside>
+            <div class="aside-title"><h2>Contenido</h2><button id="new-story" type="button">Nueva</button></div>
+            <button id="about-link" class="nav-item" type="button">Sobre mí</button>
+            <p class="list-title">Historias</p>
+            <div id="story-list"></div>
+          </aside>
+          <section class="panel">
+            <p id="loading" class="empty">Cargando contenido…</p>
+            <form id="story-form" hidden>
+              <input id="story-path" type="hidden" /><input id="story-sha" type="hidden" />
+              <div class="form-heading"><div><p class="eyebrow">Historia</p><h2 id="story-heading">Nueva historia</h2></div><button type="submit">Publicar cambios</button></div>
+              <div class="grid"><label>Título<input id="story-title" required /></label><label>Fecha<input id="story-date" type="date" required /></label></div>
+              <label>Descripción<textarea id="story-description" rows="2" required></textarea></label>
+              <div class="grid"><label>Etiquetas<input id="story-tags" placeholder="ficción, memoria" /></label><div class="checks"><label><input id="story-draft" type="checkbox" /> Borrador</label><label><input id="story-featured" type="checkbox" /> Destacada</label></div></div>
+              <label>Historia <small>Admite Markdown</small><textarea id="story-body" class="body" rows="18" required></textarea></label>
+            </form>
+            <form id="about-form" hidden>
+              <input id="about-sha" type="hidden" />
+              <div class="form-heading"><div><p class="eyebrow">Página</p><h2>Sobre mí</h2></div><button type="submit">Publicar cambios</button></div>
+              <label>Nombre<input id="about-title" required /></label>
+              <label>Rótulo superior<input id="about-eyebrow" required /></label>
+              <label>Descripción para buscadores<textarea id="about-description" rows="2" required></textarea></label>
+              <label>Biografía <small>Admite Markdown</small><textarea id="about-body" class="body" rows="16" required></textarea></label>
+            </form>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>
