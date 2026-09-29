@@ -1,14 +1,20 @@
 ---
+import { getEntry, render } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const about = await getEntry('pages', 'sobre-mi');
+
+if (!about) {
+  throw new Error('No se encontró el contenido de la página Sobre mí.');
+}
+
+const { Content } = await render(about);
 ---
 
-<BaseLayout title="Sobre mí" description="Sobre Clayderman Ivan y su escritura.">
+<BaseLayout title="Sobre mí" description={about.data.description}>
   <section class="about-page">
-    <p class="eyebrow">El autor</p>
-    <h1>Clayderman Ivan</h1>
-    <div class="about-copy">
-      <p>Escribo para acercarme a las preguntas que no admiten una respuesta rápida. Este sitio reúne historias, escenas y apuntes nacidos de esa búsqueda.</p>
-      <p>Este espacio está comenzando. Muy pronto habrá aquí más sobre mi recorrido y sobre las historias que me interesa contar.</p>
-    </div>
+    <p class="eyebrow">{about.data.eyebrow}</p>
+    <h1>{about.data.title}</h1>
+    <div class="about-copy prose-about"><Content /></div>
   </section>
 </BaseLayout>

@@ -14,4 +14,13 @@ const stories = defineCollection({
   }),
 });
 
-export const collections = { stories };
+const pages = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/pages' }),
+  schema: z.object({
+    title: z.string(),
+    eyebrow: z.string().default('El autor'),
+    description: z.string(),
+  }),
+});
+
+export const collections = { stories, pages };
